@@ -4,7 +4,9 @@ This project is my idea to improve the way the student use AI to prepare to thei
 ## Pre-Requirements
 **Python:** 3.11.9(*recommended*) <br>
 **Requirements.txt**: Look at it <br>
-**Mistral AI key**: mistral-large-2512
+**Mistral AI key**: mistral-large-2512 <br>
+**or** <br>
+**Gemini API Key**: Gemini 3.1 Flash-Lite
 
 ## Architecture
 ```mermaid
