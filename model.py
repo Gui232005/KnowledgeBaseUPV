@@ -163,51 +163,56 @@ def create_index(input_tokens, output_tokens, path):
 # Here you will use GEMINI if the key is available, if not use MISTRAL
 def speak_with_model_about_notes(question):
     prompt = '''You are a very good student, and you have taken very complete notes about the PDFs you have seen, you're need see what is the file that contains the notes about the topic 
-            of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a very complete way, with all the details,
+            of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a most complete way possible, with all the details,
             so your colleagues can benefit from your answer, that answer should be based only on the notes you have taken, and not on your own knowledge.
                 You only use the file is attached to the question, and you will answer the question based on the notes in that file, and you will not use any other knowledge you have, 
             only the notes in the file.
             '''
-
-    markEndIndex = "### **Fim do Índice para este Arquivo**"
-    folder = "md"
-    path = pathlib.Path(folder)
+    topic_doc = "document_index.json"
+   # folder = "md"
+    path = pathlib.Path(topic_doc)
     client = genai.Client(api_key=GEMINI_KEY)
 
-    for e in os.scandir(path):
-        if e.is_file() and e.name.endswith(".md"):
-            indexInfo = []
-            with open(e.path, "r", encoding="utf-8") as f:
-                for linha in f:
-                    if markEndIndex in linha:
-                        break
-                    indexInfo.append(linha)
+    if not os.path.exists(path):
+        print(f"\033[91mThe file {topic_doc} does not exist, skipping.\033[0m")
+        return
+    
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        returned_files = []
+        see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
+        you can use how many file you need to answer the question, you only return the files that you will use, 
+        and you will not return any other file, and you will return the files in a JSON format, like this:
+        {
+            "files_used": [
+                "file1.md",
+                "file2.md"
+            ]
+        }'''
+        files_to_read = client.models.generate_content(
+            model="gemini-3.1-flash-lite",
+            contents=[
+                see_file_to_read,
+                json.dumps(data),
+                question
+            ]
+        )
+        returned_files = json.loads(files_to_read.text).get("files_used", [])
 
-            index_text = "".join(indexInfo)
-            #print(f"\033[92mIndex for {e.name}:\033[0m\n{index_text}")
-
-            certain = 'If the theme about the question is in this index, answer "yes", if not answer "no", ONLY "yes" or "no".'
-
-            interaction = client.interactions.create(
+        if not returned_files:
+            print(f"\033[91mI only speak about the contents I know.\033[0m")
+            exit(1)
+        else:
+            chat_response = client.models.generate_content(
                 model="gemini-3.1-flash-lite",
-                input=f"{certain}\n\nQuestion: {question}\n\nIndex:\n{index_text}"
+                contents=[
+                    prompt,
+                    json.dumps(returned_files),
+                    question
+                ]
             )
-
-            answer = interaction.output_text.strip().lower()
-            #print(f"\033[92mAnswer for {e.name}:\033[0m\n{answer}")
-
-            if answer.startswith("yes"):
-                print(f"\033[96m→ Match found in {e.name}\033[0m")
-                speaking = client.interactions.create(
-                    model="gemini-3.1-flash-lite",
-                    input=f"{prompt}\n\nQuestion: {question}\n\nNotes:\n{index_text}"
-                )
-                print(f"\033[92mAnswer for {e.name}:\033[0m\n{speaking.output_text}")
-                exit(1)
-            else:
-                print(f"\033[90m→ No match in {e.name}\033[0m")
-                pass
-    print(f"\033[91mI only speak about the topics I have a knowledge of.\033[0m")
+    print(f"\033[92mAnswer to the question:\033[0m\n{chat_response.text}")                                
+        
 
 def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
     prompt = '''Beleive you are the best student ih the world, and you take very complete notes, with all the details, about everything you see at PDF you see, 
@@ -365,6 +370,13 @@ def main():
     question = input("Ask a question about the notes: ")
     speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
     
+    # See how many index are in the JSON file
+    """ file = pathlib.Path("document_index.json")
+    if file.exists():
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            print(f"\033[92mThere are {len(data)} indexes in the JSON file.\033[0m")"""
+
     # JSON file for all md
     '''for e in os.scandir("md"):
         if e.is_file() and e.name.endswith(".md"):
