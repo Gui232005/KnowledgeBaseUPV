@@ -6,13 +6,27 @@ from google import genai
 from google.genai import types
 from mistralai.client import Mistral
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
 
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 MISTRAL_KEY = os.getenv("MISTRAL_KEY")
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
 client = Mistral(api_key=MISTRAL_KEY)
+
+def connect_to_supabase():
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    user: dict = supabase.auth.sign_in_with_password({
+        'email': USERNAME,
+        'password': PASSWORD,
+    })
+    print("Connected to Supabase:", supabase)
+    return supabase
 
 def process_all_pdfs_in_folders():
     input_tokens = 0
@@ -362,13 +376,14 @@ def see():
                 print(f"PDF: {f}")
 
 def main():
+    connect_to_supabase()
     #see()
     #ingest_specific_pdf_to_md("CSO.md", "information\\CSO\\VPS vs Cloud vs Dedicados.pdf", "information\\CSO")
     #process_all_pdfs_in_folders()
     #create_index(0, 0, pathlib.Path("md/CSO.md"))
     # Ask a question about the notes
-    question = input("Ask a question about the notes: ")
-    speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
+    #question = input("Ask a question about the notes: ")
+    #speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
     
     # See how many index are in the JSON file
     """ file = pathlib.Path("document_index.json")
