@@ -1,0 +1,5 @@
+- Eu queria estudar para o meu exame de Segurança Informática, gostaria que me desses os principais pontos em que deveria perder tempo a estudar, dando resumos completos sobre esses temas, dá me também exercicios teóricos e práticos para que eu possa por em práticas os conhecimentos da cadeira
+
+- Eu queria obter mais informação sobre aquilo que é Cloud Computing e como podemos integrar isso naquilo que é o processo de desenvolvimento de software, mostra me esquemas e coisas práticas para que possa ser mais fácil compreender
+
+- Gostaria de perceber como posso usar os conhecimentos adquirido nas cadeiras de POO, Segurança Informática e nas cadeiras de bases de dados para montar uma aplicação segura que permita a interação entre as três parte, código, base de dados e a segurança do sistema, podes dar tips para a construção dessa aplicação, como por exemplo protocolos a ter em conta, entre outras coisas

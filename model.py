@@ -2,11 +2,13 @@ import base64
 import json
 import os
 import pathlib
+import re
 from google import genai
 from google.genai import types
 from mistralai.client import Mistral
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import time
 
 load_dotenv()
 
@@ -17,7 +19,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 MISTRAL_KEY = os.getenv("MISTRAL_KEY")
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
-client = Mistral(api_key=MISTRAL_KEY)
+client = genai.Client(api_key=GEMINI_KEY)
+mistral_client = Mistral(api_key=MISTRAL_KEY)
 
 def connect_to_supabase():
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -186,6 +189,7 @@ def speak_with_model_about_notes(question):
    # folder = "md"
     path = pathlib.Path(topic_doc)
     client = genai.Client(api_key=GEMINI_KEY)
+    mistral_client = Mistral(api_key=MISTRAL_KEY)
 
     if not os.path.exists(path):
         print(f"\033[91mThe file {topic_doc} does not exist, skipping.\033[0m")
@@ -203,29 +207,92 @@ def speak_with_model_about_notes(question):
                 "file2.md"
             ]
         }'''
-        files_to_read = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=[
-                see_file_to_read,
-                json.dumps(data),
-                question
-            ]
-        )
-        returned_files = json.loads(files_to_read.text).get("files_used", [])
+        while True:
+            try:
+                '''
+                files_to_read = client.models.generate_content(
+                    model="gemini-3.1-flash-lite",
+                    contents=[
+                         see_file_to_read,
+                            json.dumps(data),
+                            question
+                    ]
+                )
+                '''
+                mistral_response = mistral_client.chat.complete(model="mistral-large-latest", messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": see_file_to_read},
+                                {"type": "text", "text": json.dumps(data)},
+                                {"type": "text", "text": question}
+                            ]
+                        }
+                    ])
+                selection_text = (mistral_response.choices[0].message.content or "").strip()
+                if not selection_text:
+                    raise ValueError("Model returned empty content (check API key / model name).")
+                break
+            except Exception as e:
+                print(f"\033[91mError: {e}. Retrying...\033[0m")
+                time.sleep(1)
+                continue
+
+        def extract_json_object(text):
+            # Prefer a ```json ... ``` fenced block anywhere in the text
+            fence_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if fence_match:
+                return fence_match.group(1)
+            fence_match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if fence_match:
+                return fence_match.group(1)
+            # Fall back to the first { ... last } in the text
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                return text[start:end + 1]
+            return text
+
+        json_candidate = extract_json_object(selection_text)
+        try:
+            returned_files = json.loads(json_candidate).get("files_used", [])
+        except json.JSONDecodeError:
+            returned_files = []
 
         if not returned_files:
             print(f"\033[91mI only speak about the contents I know.\033[0m")
             exit(1)
         else:
-            chat_response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
-                contents=[
-                    prompt,
-                    json.dumps(returned_files),
-                    question
-                ]
-            )
-    print(f"\033[92mAnswer to the question:\033[0m\n{chat_response.text}")                                
+            while True:
+                try:
+                    '''
+                    chat_response = client.models.generate_content(
+                        model="gemini-3.1-flash-lite",
+                        contents=[
+                            prompt,
+                            json.dumps(returned_files),
+                            question
+                        ]
+                    )
+                    '''
+                    mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {"type": "text", "text": json.dumps(returned_files)},
+                                {"type": "text", "text": question}
+                            ]
+                        }
+                    ])
+                    break
+                except Exception as e:
+                    print(f"\033[91mError: {e}. Retrying...\033[0m")
+                    time.sleep(1)
+                    continue
+    
+    #print(f"\033[92mAnswer to the question:\033[0m\n{chat_response.text}")   
+    print(f"\033[92mAnswer to the question:\033[0m\n{mistral_response.choices[0].message.content}")                             
         
 
 def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
@@ -376,14 +443,15 @@ def see():
                 print(f"PDF: {f}")
 
 def main():
-    connect_to_supabase()
+    #connect_to_supabase()
     #see()
     #ingest_specific_pdf_to_md("CSO.md", "information\\CSO\\VPS vs Cloud vs Dedicados.pdf", "information\\CSO")
     #process_all_pdfs_in_folders()
     #create_index(0, 0, pathlib.Path("md/CSO.md"))
     # Ask a question about the notes
-    #question = input("Ask a question about the notes: ")
-    #speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
+    while True:
+        question = input("Ask a question about the notes: ")
+        speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
     
     # See how many index are in the JSON file
     """ file = pathlib.Path("document_index.json")
