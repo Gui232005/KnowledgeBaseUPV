@@ -2,3 +2,4 @@
 .env
 information
 md
+.__pycache__
