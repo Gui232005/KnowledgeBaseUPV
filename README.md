@@ -8,16 +8,10 @@ This project is my idea to improve the way the student use AI to prepare to thei
 **or** <br>
 **Gemini API Key**: Gemini 3.1 Flash-Lite
 
-## Architecture
-```mermaid
-flowchart LR
-    A[Web<br/><small>file: web.py</small>] <--> B[IA<br/><small> Gemini 3.1 Flash-Lite 
-    fiel: model.py</small>]
-    B <--> C[RAG<br/><small>Can save you a lot of 
-    tokens</small>]
-```
+## Branchs Models
+**Main:** Now I have option to have Mistral and Gemini model, but in the future you'll have different branches to each models
+
 ## Step-by-Step
 **Step 1:** *python -m venv /path/to/new/virtual/environment* to create .venv folder <br>
 **Step 2:** *source .venv/bin/activate* at your root directory <br>
 **Step 3:** *python model.py* to interact with the CLI <br>
-
