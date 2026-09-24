@@ -21,7 +21,6 @@ flowchart LR
 
     subgraph AI["AI Providers"]
         Gemini[Google Gemini API]
-        Mistral[Mistral AI API]
     end
 
     User --> CLI
@@ -29,7 +28,6 @@ flowchart LR
     CLI --> Processor
 
     Processor --> PDFs
-    Processor --> Mistral
     Processor --> Gemini
     Processor --> Notes
 
@@ -39,7 +37,6 @@ flowchart LR
 
     RAG --> Index
     RAG --> Notes
-    RAG --> Mistral
     RAG --> Gemini
     RAG --> User
 
