@@ -5,10 +5,11 @@ import pathlib
 import re
 from google import genai
 from google.genai import types
-from mistralai.client import Mistral
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import time
+from gtts import gTTS #This is for text to speech
+from playsound3 import playsound #This is for playing the audio
 
 load_dotenv()
 
@@ -16,7 +17,6 @@ USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-MISTRAL_KEY = os.getenv("MISTRAL_KEY")
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
 client = genai.Client(api_key=GEMINI_KEY)
@@ -246,7 +246,12 @@ def speak_with_model_about_notes(question):
                     time.sleep(1)
                     continue
     
-    print(f"\033[92mAnswer to the question:\033[0m\n{response.text}")           
+    print(f"\033[92mAnswer to the question:\033[0m\n{response.text}")     
+    myobj = gTTS(text=response.text, lang="pt", slow=False)
+    print("Generating speech for the text: 'Let's text this' in Portuguese...")
+    myobj.save("test.mp3")
+    playsound("test.mp3")
+    os.remove("test.mp3")  
 
 def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
     prompt = '''Beleive you are the best student ih the world, and you take very complete notes, with all the details, about everything you see at PDF you see, 

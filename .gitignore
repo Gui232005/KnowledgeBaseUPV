@@ -2,7 +2,7 @@
 .env
 information
 md
-.__pycache__
+__pycache__
 document_index.json
 cost.txt
 prompts_examples.txt
