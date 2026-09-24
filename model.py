@@ -134,32 +134,19 @@ def create_index(input_tokens, output_tokens, path):
         notes_content = f.read()
 
     print(f"\033[91mLet's build the index for:\033[0m {path}")
-    """chat_response = client.chat.complete(
-        model="mistral-large-2512",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "text", "text": notes_content}
-                ]
-            }
+    mistral_client = Mistral(api_key=MISTRAL_KEY)
+    mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": prompt},
+            {"type": "text", "text": notes_content}
         ]
-    )"""
-    client = genai.Client(api_key=GEMINI_KEY)
-    chat_response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=[
-            prompt,
-            notes_content
-        ]
-    )
+    }])
+
     #index_output = chat_response.choices[0].message.content
-    index_output = chat_response.text
-    #print(f"\033[92mIndex created for {path}:\033[0m\n{index_output}")
-    #print(f"\033[93mTokens used for {path}:\033[0m {chat_response.usage.total_tokens}")
+    index_output = mistral_response.choices[0].message.content
     print(f"\033[92mIndex created for {path}:\033[0m\n{index_output}")
-    print(f"\033[93mTokens used for {path}:\033[0m {chat_response.usage_metadata.total_token_count}")
+    print(f"\033[93mTokens used for {path}:\033[0m {mistral_response.usage.total_tokens}")
 
     with open(path, "r+", encoding="utf-8") as f:
         content = f.read()
@@ -209,16 +196,6 @@ def speak_with_model_about_notes(question):
         }'''
         while True:
             try:
-                '''
-                files_to_read = client.models.generate_content(
-                    model="gemini-3.1-flash-lite",
-                    contents=[
-                         see_file_to_read,
-                            json.dumps(data),
-                            question
-                    ]
-                )
-                '''
                 mistral_response = mistral_client.chat.complete(model="mistral-large-latest", messages=[
                         {
                             "role": "user",
@@ -265,16 +242,6 @@ def speak_with_model_about_notes(question):
         else:
             while True:
                 try:
-                    '''
-                    chat_response = client.models.generate_content(
-                        model="gemini-3.1-flash-lite",
-                        contents=[
-                            prompt,
-                            json.dumps(returned_files),
-                            question
-                        ]
-                    )
-                    '''
                     mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[
                         {
                             "role": "user",
@@ -291,7 +258,6 @@ def speak_with_model_about_notes(question):
                     time.sleep(1)
                     continue
     
-    #print(f"\033[92mAnswer to the question:\033[0m\n{chat_response.text}")   
     print(f"\033[92mAnswer to the question:\033[0m\n{mistral_response.choices[0].message.content}")                             
         
 
@@ -316,8 +282,6 @@ def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
 
     file_path = pathlib.Path(f"md/{mdFile}.md") if not mdFile.endswith(".md") else pathlib.Path(f"md/{mdFile}")
 
-    client = genai.Client(api_key=GEMINI_KEY)
-
     total_input_tokens = 0
     total_output_tokens = 0
     found = False
@@ -338,23 +302,23 @@ def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
         filepath = pathlib.Path(f.path)
         print(f"\033[91mLet's process the PDF:\033[0m {filepath.name}")
 
-        chat_response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=[
-                types.Part.from_bytes(
-                    data=filepath.read_bytes(),
-                    mime_type="application/pdf"
-                ),
-                prompt
-            ]
-        )
+        mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "text", "text": json.dumps(returned_files)},
+                    {"type": "text", "text": question}
+                ]
+            }
+        ])
 
         print(f"\033[92mNotes for {filepath.name}:\033[0m")
-        output_text = chat_response.text
-        print(f"\033[93mTokens used for {filepath.name}:\033[0m {chat_response.usage_metadata.total_token_count}")
+        output_text = mistral_response.choices[0].message.content
+        print(f"\033[93mTokens used for {filepath.name}:\033[0m {mistral_response.usage.total_tokens}")
 
-        total_input_tokens += chat_response.usage_metadata.prompt_token_count
-        total_output_tokens += chat_response.usage_metadata.candidates_token_count
+        total_input_tokens += mistral_response.usage.prompt_tokens
+        total_output_tokens += mistral_response.usage.completion_tokens
 
         if not os.path.exists(file_path):
             with open(file_path, "w", encoding="utf-8") as f2:
@@ -397,17 +361,14 @@ def json_index_all_the_md_files(file_path):
                     }}
                 ]
             """
-    client = genai.Client(api_key=GEMINI_KEY)
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=[
-            types.Part.from_bytes(
-                data=pathlib.Path(file_path).read_bytes(),
-                mime_type="application/md"
-            ),
-            prompt
+    mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": prompt},
+            {"type": "text", "text": json.dumps(returned_files)},
+            {"type": "text", "text": question}
         ]
-    )
+    }])
 
     index_path = pathlib.Path("document_index.json")
     try:
@@ -415,7 +376,7 @@ def json_index_all_the_md_files(file_path):
     except (json.JSONDecodeError, FileNotFoundError):
         existing_index = []
 
-    response_text = response.text.strip()
+    response_text = mistral_response.choices[0].message.content.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1].rsplit("\n", 1)[0]
 
@@ -432,7 +393,7 @@ def json_index_all_the_md_files(file_path):
 
     print(f"\033[92mJSON index created for {file_path}:\033[0m\n{response.text}")
 
-
+'''
 def see():
     #Write all the folders and PDFs inside the "information\\CSO" folder, at any depth
     for root, dirs, files in os.walk("information\\CSO"):
@@ -441,30 +402,12 @@ def see():
         for f in files:
             if f.endswith(".pdf"):
                 print(f"PDF: {f}")
+'''
 
 def main():
-    #connect_to_supabase()
-    #see()
-    #ingest_specific_pdf_to_md("CSO.md", "information\\CSO\\VPS vs Cloud vs Dedicados.pdf", "information\\CSO")
-    #process_all_pdfs_in_folders()
-    #create_index(0, 0, pathlib.Path("md/CSO.md"))
-    # Ask a question about the notes
     while True:
         question = input("Ask a question about the notes: ")
-        speak_with_model_about_notes(question) # I need a valid API KEY GEMINI or MISTRAL to run this function
-    
-    # See how many index are in the JSON file
-    """ file = pathlib.Path("document_index.json")
-    if file.exists():
-        with open(file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            print(f"\033[92mThere are {len(data)} indexes in the JSON file.\033[0m")"""
-
-    # JSON file for all md
-    '''for e in os.scandir("md"):
-        if e.is_file() and e.name.endswith(".md"):
-            print(f"\033[92mCreating JSON index for {e.name}...\033[0m")
-            json_index_all_the_md_files("md\\" + e.name)'''
+        speak_with_model_about_notes(question)
 
 if __name__=="__main__":
     main()
