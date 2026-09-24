@@ -2,7 +2,6 @@
 
  ## 1. Identidade e perfil do aluno
 
- - [ ] Autenticação real por email, Google ou conta institucional UPV.
  - [ ] Perfil com nome, curso, ano, turma, disciplinas e objetivos.
  - [ ] Diagnóstico inicial por cadeira para descobrir conhecimentos prévios e lacunas.
 
@@ -14,7 +13,7 @@
  - [ ] Escolha do modo de estudo: explicação, resumo, exercícios, revisão rápida, exame simulado ou professor socrático.
  - [ ] Ajuste automático da dificuldade com base nos erros e acertos recentes.
  - [ ] Planos de estudo adaptativos com metas, prazos, lembretes e revisão espaçada.
- - [ ] Ter uma branch para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)
+ - **[ ] Ter uma branch para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)**
 
  ## 3. Conteúdo criado pelos alunos
 
@@ -26,18 +25,13 @@
  - [ ] Sistema para validar respostas com votação e revisão de moderadores ou docentes.
  - [ ] Estatísticas individuais: evolução, consistência, tópicos difíceis e qualidade das contribuições.
 
- ## 5. Segurança, confiança e moderação
-
- - [ ] Garantir que cada aluno só acede ao que lhe pertence ou foi partilhado (RLS).
- - [ ] Separar claramente dados privados, dados do grupo e conteúdo público.
-
- ## 6. Base técnica que ainda falta
+ ## 5. Base técnica que ainda falta
 
  - [ ] Adicionar embeddings e pesquisa vetorial para melhorar o RAG por disciplina e por grupo.
  - [ ] Processar uploads de forma assíncrona, com estados de fila, sucesso e erro visíveis.
  - [ ] Implementar notificações e atualização quase em tempo real para sessões.
 
- ## 7. Outras Features
+ ## 6. Outras Features
 
  - [ ] Adicionar um modo de conversa por voz para falar naturalmente com o modelo
  - [ ] Converter automaticamente a voz em texto e mostrar a transcrição em tempo real

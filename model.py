@@ -3,8 +3,6 @@ import json
 import os
 import pathlib
 import re
-from google import genai
-from google.genai import types
 from mistralai.client import Mistral
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -17,9 +15,7 @@ PASSWORD = os.getenv("PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 MISTRAL_KEY = os.getenv("MISTRAL_KEY")
-GEMINI_KEY = os.getenv("GEMINI_KEY")
 
-client = genai.Client(api_key=GEMINI_KEY)
 mistral_client = Mistral(api_key=MISTRAL_KEY)
 
 def connect_to_supabase():
@@ -154,8 +150,8 @@ def create_index(input_tokens, output_tokens, path):
         f.write(f"# Index\n{index_output}\n\n{content}")
 
     json_index_all_the_md_files(path)
-    total_input_tokens = input_tokens + chat_response.usage.prompt_tokens
-    total_output_tokens = output_tokens + chat_response.usage.completion_tokens
+    total_input_tokens = input_tokens + mistral_response.usage.prompt_tokens
+    total_output_tokens = output_tokens + mistral_response.usage.completion_tokens
     input_tokens_cost = total_input_tokens * 0.00000044
     output_tokens_cost = total_output_tokens * 0.0000013
     total_cost = input_tokens_cost + output_tokens_cost
@@ -175,7 +171,6 @@ def speak_with_model_about_notes(question):
     topic_doc = "document_index.json"
    # folder = "md"
     path = pathlib.Path(topic_doc)
-    client = genai.Client(api_key=GEMINI_KEY)
     mistral_client = Mistral(api_key=MISTRAL_KEY)
 
     if not os.path.exists(path):
@@ -307,8 +302,8 @@ def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "text", "text": json.dumps(returned_files)},
-                    {"type": "text", "text": question}
+                    {"type": "text", "text": json.dumps(pathlib.Path(filepath).read_bytes().decode('latin-1'))},
+                    {"type": "text", "text": prompt}
                 ]
             }
         ])
@@ -365,8 +360,8 @@ def json_index_all_the_md_files(file_path):
         "role": "user",
         "content": [
             {"type": "text", "text": prompt},
-            {"type": "text", "text": json.dumps(returned_files)},
-            {"type": "text", "text": question}
+            {"type": "text", "text": json.dumps(pathlib.Path(file_path).read_text(encoding="utf-8"))},
+            {"type": "text", "text": prompt}
         ]
     }])
 
@@ -391,7 +386,7 @@ def json_index_all_the_md_files(file_path):
     with index_path.open("w", encoding="utf-8") as f:
         json.dump(existing_index + new_index, f, ensure_ascii=False, indent=2)
 
-    print(f"\033[92mJSON index created for {file_path}:\033[0m\n{response.text}")
+    print(f"\033[92mJSON index created for {file_path}:\033[0m\n{new_index}")
 
 '''
 def see():
