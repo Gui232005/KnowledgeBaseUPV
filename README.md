@@ -4,12 +4,7 @@ This project is my idea to improve the way the student use AI to prepare to thei
 ## Pre-Requirements
 **Python:** 3.11.9(*recommended*) <br>
 **Requirements.txt**: Look at it <br>
-**Mistral AI key**: mistral-large-2512 <br>
-**or** <br>
-**Gemini API Key**: Gemini 3.1 Flash-Lite
-
-## Branchs Models
-**Main:** Now I have option to have Mistral and Gemini model, but in the future you'll have different branches to each models
+**Mistral AI key**: mistral-large-2512 (*recommended*)
 
 ## Step-by-Step
 **Step 1:** *python -m venv /path/to/new/virtual/environment* to create .venv folder <br>
