@@ -7,6 +7,9 @@ from mistralai.client import Mistral
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import time
+from gtts import gTTS #This is for text to speech
+from playsound3 import playsound #This is for playing audio
+import speech_recognition as sr #This is for speech to text
 
 load_dotenv()
 
@@ -253,9 +256,15 @@ def speak_with_model_about_notes(question):
                     time.sleep(1)
                     continue
     
-    print(f"\033[92mAnswer to the question:\033[0m\n{mistral_response.choices[0].message.content}")                             
-        
-
+    print(f"\033[92mAnswer to the question:\033[0m\n{mistral_response.choices[0].message.content}")
+    
+    # Here you have the generation of the speech for the answer
+    parsed_response = re.sub(r"[*#_`~]", "", mistral_response.choices[0].message.content).strip() # Clean the output for speeching
+    myobj = gTTS(text=parsed_response, lang="en", slow=False)
+    myobj.save("text_to_speech.mp3")
+    playsound("text_to_speech.mp3")
+    os.remove("text_to_speech.mp3")
+    
 def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
     prompt = '''Beleive you are the best student ih the world, and you take very complete notes, with all the details, about everything you see at PDF you see, 
             so you will receive a PDF and you will take notes about it, and you will give me the notes in a very complete way, with all the details, 
@@ -400,9 +409,22 @@ def see():
 '''
 
 def main():
+    r = sr.Recognizer()
     while True:
-        question = input("Ask a question about the notes: ")
-        speak_with_model_about_notes(question)
+        try:
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source, duration=0.2)
+                audio = r.listen(source)
+                question = r.recognize_google(audio)
+                print(f"You asked: {question}")
+        except sr.UnknownValueError:
+            print("Sorry, I could not understand the audio. Please try again.")
+            continue
+        except sr.RequestError as e:
+            print(f"Could not request results from Google Speech Recognition service; {e}")
+            continue
+        #question = input("Ask a question about the notes: ")
+        #speak_with_model_about_notes(question)
 
 if __name__=="__main__":
     main()
