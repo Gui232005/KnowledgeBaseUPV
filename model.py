@@ -52,7 +52,7 @@ def process_all_pdfs_in_folders():
                     if f.is_file() and f.name.endswith(".pdf"):
                         print(f"\033[91mLet's process the PDF:\033[0m {f.name}")
                         filepath = pathlib.Path(f.path)
-                        chat_response = client.chat.complete(
+                        chat_response = mistral_client.chat.complete(
                             model="mistral-large-2512",
                             messages=[
                                 {
