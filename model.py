@@ -410,19 +410,36 @@ def see():
 
 def main():
     r = sr.Recognizer()
+    r.pause_threshold = 1   #Time to wait before considering the speech ended
+    r.dynamic_energy_threshold = True
+
     while True:
+
+        '''When you want to interact using voice input'''
+        
         try:
             with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source, duration=0.2)
-                audio = r.listen(source)
-                question = r.recognize_google(audio)
-                print(f"You asked: {question}")
+                print("Fale agora...")
+                r.adjust_for_ambient_noise(source, duration=1)
+                audio = r.listen(source, timeout=None, phrase_time_limit=None)
+
+            texto = r.recognize_google(audio, language="pt-PT")
+            print(f"Foi dito: {texto}")
+            question = texto
+            speak_with_model_about_notes(question)
+
+            if texto.lower() in ["exit", "stop"]:
+                break
+
         except sr.UnknownValueError:
-            print("Sorry, I could not understand the audio. Please try again.")
-            continue
+            print("I don't understand. Say again.")
+        except sr.WaitTimeoutError:
+            print("Waiting for you to speak...")
         except sr.RequestError as e:
-            print(f"Could not request results from Google Speech Recognition service; {e}")
-            continue
+            print(f"Error: {e}")
+
+        '''When you want to interact using text input'''
+
         #question = input("Ask a question about the notes: ")
         #speak_with_model_about_notes(question)
 
