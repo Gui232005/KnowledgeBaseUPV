@@ -13,7 +13,7 @@
  - [ ] Escolha do modo de estudo: explicação, resumo, exercícios, revisão rápida, exame simulado ou professor socrático.
  - [ ] Ajuste automático da dificuldade com base nos erros e acertos recentes.
  - [ ] Planos de estudo adaptativos com metas, prazos, lembretes e revisão espaçada.
- - [ ] Ter uma branch para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)
+ - **[ ] Ter uma branch para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)**
 
  ## 3. Conteúdo criado pelos alunos
 
@@ -35,7 +35,7 @@
 
  - [ ] Adicionar um modo de conversa por voz para falar naturalmente com o modelo
  - [ ] Converter automaticamente a voz em texto e mostrar a transcrição em tempo real
- - [ ] Ler as respostas do modelo em voz alta com *text to speech*
+ - [ X ] Ler as respostas do modelo em voz alta com *text to speech*
  - [ ] Permitir interromper a resposta falada e retomar a conversa sem perder o contexto
  - [ ] Adicionar controlos de pausa, reprodução, velocidade e volume da voz
  - [ ] Permitir escolher diferentes vozes, idiomas e sotaques
