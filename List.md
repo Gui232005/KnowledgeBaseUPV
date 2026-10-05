@@ -3,14 +3,14 @@
  ## 1. Identidade e perfil do aluno
 
  - [ ] Perfil com nome, curso, ano, turma, disciplinas e objetivos.
- - [ ] Diagnóstico inicial por cadeira para descobrir conhecimentos prévios e lacunas.
+ - [ ] Diagnóstico inicial por cadeira para descobrir conhecimentos prévios e lacunas ao adicionar novos contúedo a algum md já existente.
 
  ## 2. Memória e personalização da IA
 
  - [ ] Guardar conversas, perguntas, respostas, avaliações e progresso numa base de dados persistente.
  - [ ] Memória controlável por tópico, permitindo ao aluno corrigir ou apagar factos guardados sobre si.
  - [ ] Contexto personalizado por disciplina, turma e objetivo de estudo.
- - [ ] Escolha do modo de estudo: explicação, resumo, exercícios, revisão rápida, exame simulado ou professor socrático.
+ - [ ] Escolha do modo de estudo: como temos no NotebookLM.
  - [ ] Ajuste automático da dificuldade com base nos erros e acertos recentes.
  - [ ] Planos de estudo adaptativos com metas, prazos, lembretes e revisão espaçada.
  - **[ ] Ter uma branch para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)**
@@ -45,3 +45,5 @@
  - [ ] Permitir ativar ou desativar o microfone e apagar gravações e transcrições
  - [ ] Criar um modo de revisão rápida que resume a conversa em cartões ou pontos-chave
  - [ ] Permitir partilhar uma conversa, transcrição ou resumo
+ - [ ] Permitir que caso queira apenas adicionar um novo modelo apenas crie um ficheiro .py com o nome do novo modelo
+ - [ ] Mlehorar aquilo que é a fala, ela funciona, mas pode ser bastante melhorada
