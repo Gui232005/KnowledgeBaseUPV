@@ -46,4 +46,4 @@
  - [ ] Criar um modo de revisão rápida que resume a conversa em cartões ou pontos-chave
  - [ ] Permitir partilhar uma conversa, transcrição ou resumo
  - [ ] Permitir que caso queira apenas adicionar um novo modelo apenas crie um ficheiro .py com o nome do novo modelo
- - [ ] Mlehorar aquilo que é a fala, ela funciona, mas pode ser bastante melhorada
+ - [ ] Mehorar aquilo que é a fala, ela funciona, mas pode ser bastante melhorada

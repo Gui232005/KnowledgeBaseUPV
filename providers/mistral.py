@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import pathlib
+from pydoc import text
 import re
 from mistralai.client import Mistral
 from dotenv import load_dotenv
@@ -17,9 +18,6 @@ USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-MISTRAL_KEY = os.getenv("MISTRAL_KEY")
-
-mistral_client = Mistral(api_key=MISTRAL_KEY)
 
 def connect_to_supabase():
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -163,23 +161,16 @@ def create_index(input_tokens, output_tokens, path):
     with open("cost.txt", "a+", encoding="utf-8") as file:
         file.write(f"Total cost to build {path}: ${total_cost:.6f}\n")
 
-# Here you will use GEMINI if the key is available, if not use MISTRAL
-def speak_with_model_about_notes(question):
-    prompt = '''You are a very good student, and you have taken very complete notes about the PDFs you have seen, you're need see what is the file that contains the notes about the topic 
-            of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a most complete way possible, with all the details,
-            so your colleagues can benefit from your answer, that answer should be based only on the notes you have taken, and not on your own knowledge.
-                You only use the file is attached to the question, and you will answer the question based on the notes in that file, and you will not use any other knowledge you have, 
-            only the notes in the file.
-            '''
+# Here you will use your MISTRAL KEY to make questions to the model about your knowledge
+def speak_with_model_about_notes(question, option, key):
     topic_doc = "document_index.json"
-   # folder = "md"
     path = pathlib.Path(topic_doc)
-    mistral_client = Mistral(api_key=MISTRAL_KEY)
+    mistral_client = Mistral(api_key=key)
 
     if not os.path.exists(path):
         print(f"\033[91mThe file {topic_doc} does not exist, skipping.\033[0m")
         return
-    
+
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
         returned_files = []
@@ -192,6 +183,8 @@ def speak_with_model_about_notes(question):
                 "file2.md"
             ]
         }'''
+
+        # Here you will use the model to find the files to answer the question, and you will return the files in a JSON format
         while True:
             try:
                 mistral_response = mistral_client.chat.complete(model="mistral-large-latest", messages=[
@@ -213,21 +206,6 @@ def speak_with_model_about_notes(question):
                 time.sleep(1)
                 continue
 
-        def extract_json_object(text):
-            # Prefer a ```json ... ``` fenced block anywhere in the text
-            fence_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
-            if fence_match:
-                return fence_match.group(1)
-            fence_match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
-            if fence_match:
-                return fence_match.group(1)
-            # Fall back to the first { ... last } in the text
-            start = text.find("{")
-            end = text.rfind("}")
-            if start != -1 and end != -1 and end > start:
-                return text[start:end + 1]
-            return text
-
         json_candidate = extract_json_object(selection_text)
         try:
             returned_files = json.loads(json_candidate).get("files_used", [])
@@ -239,32 +217,162 @@ def speak_with_model_about_notes(question):
             exit(1)
         else:
             while True:
-                try:
-                    mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt},
-                                {"type": "text", "text": json.dumps(returned_files)},
-                                {"type": "text", "text": question}
-                            ]
-                        }
-                    ])
+                try: 
+                    if option == "audio":
+                        try:
+                            with sr.Microphone() as source:
+                                print("Fale agora...")
+                                r.adjust_for_ambient_noise(source, duration=1) # type: ignore
+                                audio = r.listen(source, timeout=None, phrase_time_limit=None) # type: ignore
+
+                            texto = r.recognize_google(audio, language="pt-PT") # type: ignore
+                            print(f"Foi dito: {texto}")
+                            question = texto
+                            #speak_with_model_about_notes(question)
+
+                            if texto.lower() in ["exit", "stop"]:
+                                exit(0)
+                            # Here you will use the gTTS library to convert the text to speech, and then you will play the audio using the playsound library
+                            parsed_response = re.sub(r"[*#_`~]", "", mistral_response.choices[0].message.content).strip() # Clean the output for speeching
+                            myobj = gTTS(text=parsed_response, lang="pt-PT", slow=False)
+                            myobj.save("text_to_speech.mp3")
+                            playsound("text_to_speech.mp3")
+                            os.remove("text_to_speech.mp3")
+
+                        except sr.UnknownValueError:
+                            print("I don't understand. Say again.")
+                        except sr.WaitTimeoutError:
+                            print("Waiting for you to speak...")
+                        except sr.RequestError as e:
+                            print(f"Error: {e}")
+
+                    elif option == "text":
+                        prompt = '''You are a very good student, and you have taken very complete notes about the PDFs you have seen, you're need see what is the file that contains the notes about the topic 
+                            of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a most complete way possible, with all the details,
+                            so your colleagues can benefit from your answer, that answer should be based only on the notes you have taken, and not on your own knowledge.
+                             You only use the file is attached to the question, and you will answer the question based on the notes in that file, and you will not use any other knowledge you have, 
+                            only the notes in the file.
+                        '''
+                        answer = model_output(prompt, returned_files, question, mistral_client)
+                        os.system('cls')
+                        print(f"\033[92mAnswer:\033[0m {answer}")
+
+                    elif option == "video":
+                        print(f"\033[92mGenerating video...\033[0m")
+
+                    elif option == "summary":
+                        prompt = f'''You are a very good person to do summaries, and you will receive a text, and you will need to create a very good summary of that text, 
+                            with the most important points of the text, and you will return the summary'''
+                        answer = model_output(prompt, returned_files, question, mistral_client)
+                        os.system('cls')
+                        print(f"Summary: {answer}")
+
+                    elif option == "quizz":
+                        grade = 0
+                        prompt = f'''You are a very good person to create quizzes, and you will receive a request, and you will need to create a very good quiz of that request,
+                            with the most important points of the content, but never reveal the correct option, I want into a format JSON, like this:
+                            [
+                                {{
+                                    "question": "Question 1",
+                                    "options": [
+                                        "Option A",
+                                        "Option B",
+                                        "Option C",
+                                        "Option D"
+                                    ]
+                                }},
+                                {{
+                                    "question": "Question 2",
+                                    "options": [
+                                        "Option A",
+                                        "Option B",
+                                        "Option C",
+                                        "Option D"
+                                    ]
+                                }}
+                            ] I only want the JSON, nothing else, and you will not answer any questions, only create the quiz.'''
+                        answer = "[" + extract_json_object(model_output(prompt, returned_files, question, mistral_client)) + "]"
+                        os.system('cls')
+                        try:
+                            json_quiz = json.loads(answer)
+                            if isinstance(json_quiz, list):
+                                for i, q in enumerate(json_quiz):
+                                    print(f"\033[92mQuestion {i + 1}:\033[0m {q.get('question')}")
+                                    for j, option in enumerate(q.get('options', [])):
+                                        print(f"  Option {chr(65 + j)}: {option}") # 65 is the ASCII code for 'A'
+                                    while True:
+                                        my_answer = input("\033[92mEnter your answer (A, B, C, D): \033[0m").strip().upper()
+                                        if my_answer in ['A', 'B', 'C', 'D']:
+                                            break
+                                        print("\033[91mInvalid option. Please enter A, B, C, or D.\033[0m")
+                                    print(f"\033[92mEvaluating your answer...\033[0m")
+                                    prompt_check = '''You will need to evaluate the answer of the user, and you will need to tell if the answer is correct or not,
+                                      and you will need to give a very complete explanation of the answer. Your is YES or NO, if the answer is NO give me the letter
+                                      of the correct option, follow this template:
+                                        "correct": "YES" or "NO",
+                                        "correct_option": "A" or "B" or "C" or "D".
+                                      No explanations, no other text, only the JSON, nothing else, and you will not answer any questions, only evaluate the answer of the user.'''
+                                    correction = model_output(prompt_check, returned_files, f"Question: {q.get('question')}, Options: {q.get('options')}, User's answer: {my_answer}", mistral_client)
+                                    correction_data = extract_json_object(correction)
+                                    correction_json = json.loads(correction_data)
+                                    if "YES" in correction:
+                                        print(f"\033[92mCorrect! Your answer is right.\033[0m")
+                                        grade += 1
+                                        input("\033[92mPress Enter to continue to the next question...\033[0m")
+                                        os.system('cls')
+                                    else:
+                                        print(f"\033[91mIncorrect. The correct answer is: {correction_json.get('correct_option')}\033[0m")
+                                        input("\033[91mPress Enter to continue to the next question...\033[0m")
+                                        os.system('cls')
+                            final_grade = (grade / len(json_quiz)) * 100 if json_quiz else 0
+                            print(f"\033[92mYour final grade is: {final_grade:.2f}%\033[0m")
+                        except json.JSONDecodeError:
+                            print(f"\033[91mError: The model did not return a valid JSON for the quiz.\033[0m")
+                            print(f"\033[91mModel output:\033[0m {answer}")
+                        except Exception as e:
+                            print(f"\033[91mUnexpected error: {e}\033[0m")
+
+                    elif option == "flashcards":
+                        print(f"\033[92mGenerating flashcards...\033[0m")
+
                     break
                 except Exception as e:
                     print(f"\033[91mError: {e}. Retrying...\033[0m")
                     time.sleep(1)
                     continue
-    
-    print(f"\033[92mAnswer to the question:\033[0m\n{mistral_response.choices[0].message.content}")
-    
-    # Here you have the generation of the speech for the answer
-    parsed_response = re.sub(r"[*#_`~]", "", mistral_response.choices[0].message.content).strip() # Clean the output for speeching
-    myobj = gTTS(text=parsed_response, lang="en", slow=False)
-    myobj.save("text_to_speech.mp3")
-    playsound("text_to_speech.mp3")
-    os.remove("text_to_speech.mp3")
-    
+                except Exception as e:
+                    print(f"\033[91mError: {e}. Retrying...\033[0m")
+                    time.sleep(1)
+                    continue
+
+def model_output(prompt, returned_files, question, mistral_client):
+    mistral_response = mistral_client.chat.complete(model="mistral-large-latest", messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "text", "text": json.dumps(returned_files)},
+                {"type": "text", "text": question}
+            ]
+        }
+    ])
+    return mistral_response.choices[0].message.content
+
+def extract_json_object(text):
+    # Prefer a ```json ... ``` fenced block anywhere in the text
+    fence_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fence_match:
+        return fence_match.group(1)
+    fence_match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fence_match:
+        return fence_match.group(1)
+    # Fall back to the first { ... last } in the text
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return text[start:end + 1]
+    return text
+
 def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
     prompt = '''Beleive you are the best student ih the world, and you take very complete notes, with all the details, about everything you see at PDF you see, 
             so you will receive a PDF and you will take notes about it, and you will give me the notes in a very complete way, with all the details, 
@@ -306,7 +414,7 @@ def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
         filepath = pathlib.Path(f.path)
         print(f"\033[91mLet's process the PDF:\033[0m {filepath.name}")
 
-        mistral_response = mistral_client.chat.complete(model="zai-glm-5-2", messages=[
+        mistral_response = mistral_client.chat.complete(model="mistral-large-latest", messages=[
             {
                 "role": "user",
                 "content": [
@@ -342,6 +450,7 @@ def ingest_specific_pdf_to_md(mdFile, pdf, mainFolder):
     return total_input_tokens, total_output_tokens
 
 def json_index_all_the_md_files(file_path):
+    mistral_client = Mistral(api_key=os.getenv("PROVIDER_KEY"))
     subject_name = pathlib.Path(file_path).stem
     prompt = f"""You will receive a md file, and you will create a JSON index of all the notes in that file, and you will return the JSON index in a very complete way,
                 with all the details, so your colleagues can benefit from your index.
@@ -407,41 +516,3 @@ def see():
             if f.endswith(".pdf"):
                 print(f"PDF: {f}")
 '''
-
-def main():
-    r = sr.Recognizer()
-    r.pause_threshold = 1   #Time to wait before considering the speech ended
-    r.dynamic_energy_threshold = True
-
-    while True:
-
-        '''When you want to interact using voice input'''
-        
-        try:
-            with sr.Microphone() as source:
-                print("Fale agora...")
-                r.adjust_for_ambient_noise(source, duration=1)
-                audio = r.listen(source, timeout=None, phrase_time_limit=None)
-
-            texto = r.recognize_google(audio, language="pt-PT")
-            print(f"Foi dito: {texto}")
-            question = texto
-            speak_with_model_about_notes(question)
-
-            if texto.lower() in ["exit", "stop"]:
-                break
-
-        except sr.UnknownValueError:
-            print("I don't understand. Say again.")
-        except sr.WaitTimeoutError:
-            print("Waiting for you to speak...")
-        except sr.RequestError as e:
-            print(f"Error: {e}")
-
-        '''When you want to interact using text input'''
-
-        #question = input("Ask a question about the notes: ")
-        #speak_with_model_about_notes(question)
-
-if __name__=="__main__":
-    main()
