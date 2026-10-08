@@ -1,3 +1,8 @@
+"""
+Log:
+- YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
+"""
+
 import base64
 import json
 import os

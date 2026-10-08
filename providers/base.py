@@ -1,6 +1,9 @@
-'''
-Base class for all AI providers.
-'''
+"""Base class for all AI providers.
+
+Log:
+- YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
+"""
+
 from dotenv import load_dotenv
 from .mistral import speak_with_model_about_notes
 
