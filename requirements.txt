@@ -1,3 +1,9 @@
 google-genai
 mistralai
 python-dotenv
+supabase
+gTTS
+playsound3
+SpeechRecognition
+PyAudio
+manim

@@ -6,6 +6,12 @@ students often need to spend a significant amount of time attaching course
 materials. This can be especially difficult when a subject includes many PDF
 files.
 
+## Step by step
+
+1. First create .venv
+2. Run `python -m pip install -r requirements.txt` to have all the dependencies
+3. run `python main.py`
+
 ## Rules
 
 The following rules help keep the project organized:
