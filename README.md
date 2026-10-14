@@ -17,8 +17,9 @@ files.
 The following rules help keep the project organized:
 
 1. Write everything in English, including commits and comments.
-2. To add a new model, create a new `.py` file inside the provider's folder.
-3. Before improving an existing file, add an entry to the improvement log at
+2. To add new things create a pull-request and the owner will validate your PR
+3. To add a new model, create a new `.py` file inside the provider's folder.
+4. Before improving an existing file, add an entry to the improvement log at
    the top of the file. Use this template:
 
    ```python
