@@ -47,3 +47,5 @@
  - [ ] Permitir partilhar uma conversa, transcrição ou resumo
  - [ ] Permitir que caso queira apenas adicionar um novo modelo apenas crie um ficheiro .py com o nome do novo modelo
  - [ ] Mehorar aquilo que é a fala, ela funciona, mas pode ser bastante melhorada
+ - [ ] Melhorar a apresentação das formulas matemáticas pois as mesmas neste momemento estão mal formatadas o que não permite uma boa visualização das mesmas
+ - [ ] Afinar o metodo de pesquisa pois um tema pode estar em várias UCs. Sugestão : "Procura pelo Tema Real e não com Temas relacionados com aquele Tema. Exemplo : Procurar por Primtivas de Funções racionais é diferente de Funções racionais."
