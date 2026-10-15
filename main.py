@@ -2,16 +2,15 @@
 Log:
 - YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
 - 2026-10-10 - [Guilherme Silva]: Improve CLI interface
+- 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
 """
 
 '''Impedir que quem nao respeite as regras faça commits and pushs'''
 
-from providers.mistral import *
-from providers.base import ModelProvider
-
-# Create the same login, default class and I choose the provider to use
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+from providers.mistral import Mistral
+import speech_recognition as sr
+import os
+import time
 
 OPTIONS = {
     "1": ("Speak with text"),
@@ -24,6 +23,8 @@ OPTIONS = {
 }
 
 def main():
+    provider = Mistral(os.getenv("PROVIDER_KEY")) 
+    
     while True:
             # Menu to choose output type
             print("\n\033[94mPlease choose an option:\033[0m")
@@ -37,13 +38,11 @@ def main():
             if choice == "1":
                 os.system('cls')
                 question = input("\033[92mEnter your question about the notes: \033[0m")
-                ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "text")
+                provider.speak_with_model(question, "text")
                 
             elif choice == "2":
-                print("\033[93mThis isn't perfect yet, It still in development.\033[0m")
-                exit(1)
                 # Here you will use the speech text recognition
-                '''r = sr.Recognizer()
+                r = sr.Recognizer()
                 r.pause_threshold = 1
                 r.dynamic_energy_threshold = True
                 while True:
@@ -56,7 +55,7 @@ def main():
                         texto = r.recognize_google(audio, language="pt-PT")
                         print(f"Foi dito: {texto}")
                         question = texto
-                        ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "audio")
+                        provider.speak_with_model(question, "audio")
     
                         if texto.lower() in ["exit", "stop"]:
                             os.system('cls')
@@ -66,27 +65,27 @@ def main():
                     except sr.WaitTimeoutError:
                         print("Waiting for you to speak...")
                     except sr.RequestError as e:
-                        print(f"Error: {e}")'''
+                        print(f"Error: {e}")
             
             elif choice == "3":
                 os.system('cls')
                 question = input("Enter your question about the notes: ")
-                ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "summary")
+                provider.speak_with_model(question, "summary")
 
             elif choice == "4":
                 os.system('cls')
                 question = input("Enter your theme to create a quiz about: ")
-                ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "quizz")
+                provider.speak_with_model(question, "quizz")
 
             elif choice == "5":
                 os.system('cls')
                 question = input("Enter your question about the notes: ")
-                ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "flashcards")
+                provider.speak_with_model(question, "flashcards")
 
             elif choice == "6":
                 os.system('cls')
                 question = input("Enter your question about the notes: ")
-                ModelProvider("Mistral", os.getenv("PROVIDER_KEY")).speak_with_model(question, "video")
+                provider.speak_with_model(question, "video")
 
             elif choice == "0":
                 print("\033[92mExiting the program. Goodbye!\033[0m")
