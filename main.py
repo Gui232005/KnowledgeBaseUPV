@@ -3,9 +3,10 @@ Log:
 - YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
 - 2026-10-10 - [Guilherme Silva]: Improve CLI interface
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
+- 2026-10-15 - [AlexPT2k22]: Turned the loose string after the log into a comment so the imports stay at the top of the module (ruff E402).
 """
 
-'''Impedir que quem nao respeite as regras faça commits and pushs'''
+# Impedir que quem nao respeite as regras faça commits and pushs
 
 from providers.mistral import Mistral
 import speech_recognition as sr
