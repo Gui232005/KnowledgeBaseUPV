@@ -3,6 +3,7 @@ Log:
 - YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
 - 2026-10-15 - [AlexPT2k22]: Removed the unused `user` variable in connect_to_supabase (ruff F841).
+- 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation and fix some issues.
 """
 
 from abc import ABC, abstractmethod
@@ -11,9 +12,10 @@ import tempfile
 import subprocess as standard_subprocess
 import shutil
 import time
+import json
 from dotenv import load_dotenv
 from supabase import Client, create_client
-from sympy import re
+import re
 
 load_dotenv()
 
@@ -34,7 +36,24 @@ class ModelProvider(ABC):
         return self.model_name
 
     @abstractmethod
-    def speak_with_model(self, question: str, output_type: str):
+    def speak_with_model(question: str, output_type: str):
+        pass
+
+    def create_conversation(self, conversation_data):
+        file = "conversation.json"
+        try:
+            with open(file, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            history = []
+        history.append(conversation_data)
+        with open(file, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=4)
+
+    @staticmethod
+    def conversation_review(conversation):
+        '''conversation is a JSON object'''
+        print(f"Conversation Review: {conversation}")
         pass
 
     @staticmethod

@@ -13,7 +13,7 @@
  - [ X ] Escolha do modo de estudo: como temos no NotebookLM.
  - [ ] Ajuste automático da dificuldade com base nos erros e acertos recentes.
  - [ ] Planos de estudo adaptativos com metas, prazos, lembretes e revisão espaçada.
- - **[ ] Ter vários ficheiros para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)**
+ - **[ X ] Ter vários ficheiros para os vários modelos que vão sendo utilizados (ex: OpenAI, Antropic, Mistral, Ollama, Qwen, ...)**
 
  ## 3. Conteúdo criado pelos alunos
 
@@ -21,7 +21,7 @@
 
  ## 4. Estudo e avaliação adaptados
  
- - [ ] Gerar quizzes a partir das notas de um grupo, com dificuldade ajustável à pessoa.
+ - [ X ] Gerar quizzes a partir das notas de um grupo, com dificuldade ajustável à pessoa.
  - [ ] Sistema para validar respostas com votação e revisão de moderadores ou docentes.
  - [ ] Estatísticas individuais: evolução, consistência, tópicos difíceis e qualidade das contribuições.
 
@@ -33,14 +33,13 @@
 
  ## 6. Outras Features
 
- - [ ] Adicionar um modo de conversa por voz para falar naturalmente com o modelo
- - [ ] Converter automaticamente a voz em texto e mostrar a transcrição em tempo real
+ - [ X ] Adicionar um modo de conversa por voz para falar naturalmente com o modelo
+ - [ X ] Converter automaticamente a voz em texto e mostrar a transcrição em tempo real
  - [ X ] Ler as respostas do modelo em voz alta com *text to speech*
  - [ ] Permitir interromper a resposta falada e retomar a conversa sem perder o contexto
  - [ ] Adicionar controlos de pausa, reprodução, velocidade e volume da voz
  - [ ] Permitir escolher diferentes vozes, idiomas e sotaques
- - [ ] Detetar automaticamente o idioma falado e permitir corrigi-lo manualmente
- - [ ] Permitir alternar rapidamente entre texto, voz e modo misto durante uma sessão
+ - [ X ] Permitir alternar rapidamente entre texto, voz e modo misto durante uma sessão
  - [ ] Criar um modo de prática oral com perguntas, respostas e feedback imediato
  - [ ] Permitir ativar ou desativar o microfone e apagar gravações e transcrições
  - [ ] Criar um modo de revisão rápida que resume a conversa em cartões ou pontos-chave

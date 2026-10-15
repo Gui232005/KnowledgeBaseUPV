@@ -3,6 +3,7 @@ Log:
 - YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
 - 2026-10-12 - [Guilherme Silva]: Added the ability to create videos and to play them.
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable (NOT FINISHED).
+- 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation.
 """
 
 import base64
@@ -291,6 +292,7 @@ class Mistral(ModelProvider):
                                 only the notes in the file.
                             '''
                             mistral_response = self.model_output(prompt, json.dumps(returned_files), question)
+                            self.create_conversation({"question": question, "answer": mistral_response})
                             print(f"\033[92mAnswer:\033[0m {mistral_response}")
 
                             try:
@@ -303,7 +305,9 @@ class Mistral(ModelProvider):
                             except Exception as e:
                                 print(f"\033[91mError in text-to-speech or audio playback: {e}\033[0m")
                                 exit(1)
-
+                            if question.lower() in ["exit", "stop"]:
+                                os.system('cls')
+                                break
 
                         elif option == "text":
                             prompt = '''You are a very good student, and you have taken very complete notes about the PDFs you have seen, you're need see what is the file that contains the notes about the topic 
@@ -313,18 +317,22 @@ class Mistral(ModelProvider):
                                 only the notes in the file.
                             '''
                             answer = self.model_output(prompt, json.dumps(returned_files), question)
+                            self.create_conversation(conversation_data={"question": question, "answer": json.dumps(answer)})
                             os.system('cls')
                             print(f"\033[92mAnswer:\033[0m {answer}")
                             input("\033[93mPress Enter to continue...\033[0m")
                             os.system('cls')
-                            
+                            break
 
                         elif option == "summary":
                             prompt = f'''You are a very good person to do summaries, and you will receive a text, and you will need to create a very good summary of that text, 
                                 with the most important points of the text, and you will return the summary'''
                             answer = self.model_output(prompt, json.dumps(returned_files), question)
+                            self.create_conversation(conversation_data={"question": question, "answer": answer})
                             os.system('cls')
                             print(f"Summary: {answer}")
+                            input("\033[93mPress Enter to continue...\033[0m")
+                            break
 
                         elif option == "quizz":
                             grade = 0
@@ -350,15 +358,17 @@ class Mistral(ModelProvider):
                                         ]
                                     }}
                                 ] I only want the JSON, nothing else, and you will not answer any questions, only create the quiz.'''
-                            answer = "[" + ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question)) + "]"
+                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question))
+                            answer = "[" + response + "]"                       
+                            self.create_conversation(conversation_data={"question": question, "answer": response})                            
                             os.system('cls')
                             try:
                                 json_quiz = json.loads(answer)
                                 if isinstance(json_quiz, list):
                                     for i, q in enumerate(json_quiz):
                                         print(f"\033[92mQuestion {i + 1}:\033[0m {q.get('question')}")
-                                        for j, option in enumerate(q.get('options', [])):
-                                            print(f"  Option {chr(65 + j)}: {option}") # 65 is the ASCII code for 'A'
+                                        for j, opt in enumerate(q.get('opt', [])):
+                                            print(f"  Option {chr(65 + j)}: {opt}") # 65 is the ASCII code for 'A'
                                         while True:
                                             my_answer = input("\033[92mEnter your answer (A, B, C, D): \033[0m").strip().upper()
                                             if my_answer in ['A', 'B', 'C', 'D']:
@@ -394,6 +404,8 @@ class Mistral(ModelProvider):
                                 print(f"\033[91mModel output:\033[0m {answer}")
                             except Exception as e:
                                 print(f"\033[91mUnexpected error: {e}\033[0m")
+                            input("\033[92mPress Enter to continue...\033[0m")
+                            break
 
                         elif option == "flashcards":
                             prompt = f'''You are a very good person to create flashcards, and you will receive a request, and you will need to create a very good flashcards of that request,
@@ -408,7 +420,9 @@ class Mistral(ModelProvider):
                                         "answer": "Answer 2"
                                     }}
                                 ] I only want the JSON, nothing else, and you will not answer any questions, only create the flashcards. And 10 flashcards is the maximum you can create, if the content is too big, you will create only 10 flashcards, and you will not create more than 10 flashcards.'''
-                            answer = "[" + ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question)) + "]"
+                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question))
+                            self.create_conversation(conversation_data={"question": question, "answer": response})
+                            answer = "[" + response + "]"
                             os.system('cls')
                             try:
                                 json_flashcards = json.loads(answer)
@@ -427,7 +441,9 @@ class Mistral(ModelProvider):
                                 print(f"\033[91mModel output:\033[0m {answer}")
                             except Exception as e:
                                 print(f"\033[91mUnexpected error: {e}\033[0m")
-                            
+                            input("\033[92mPress Enter to continue...\033[0m")
+                            break
+                        
                         elif option == "video":
                             prompt = """
                                 Write a complete, runnable Python script using the Manim Community library
@@ -461,7 +477,10 @@ class Mistral(ModelProvider):
                                 and group.scale_to_fit_height(config.frame_height - 1) when needed.
                             """
                             answer = self.model_output(prompt, json.dumps(returned_files), question)
+                            self.create_conversation(conversation_data={"question": question, "answer": "A video was created successfully."})
                             ModelProvider.run_video(answer, quality="l", preview=True)
+                            input("\033[92mPress Enter to continue...\033[0m")
+                            break
 
                     except Exception as e:
                         print(f"\033[91mError: {e}. Retrying...\033[0m")

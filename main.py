@@ -4,6 +4,7 @@ Log:
 - 2026-10-10 - [Guilherme Silva]: Improve CLI interface
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
 - 2026-10-15 - [AlexPT2k22]: Turned the loose string after the log into a comment so the imports stay at the top of the module (ruff E402).
+-2026-10-16 - [Guilherme Silva]: Fix provider and add the option Conversation Review to the CLI interface.
 """
 
 # Impedir que quem nao respeite as regras faça commits and pushs
@@ -20,12 +21,12 @@ OPTIONS = {
     "4": ("Quiz"),
     "5": ("Flashcards"),
     "6": ("Video"),
+    "7": ("Conversation Review"),
     "0": ("Exit")
 }
 
 def main():
-    provider = Mistral(os.getenv("PROVIDER_KEY")) 
-    
+    provider = Mistral(os.getenv("PROVIDER_KEY"))
     while True:
             # Menu to choose output type
             print("\n\033[94mPlease choose an option:\033[0m")
@@ -88,8 +89,17 @@ def main():
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "video")
 
+            elif choice == "7":
+                print("\033[92mReviewing the conversation...\033[0m")
+                os.system('cls')
+                #conversation -> Store all the conversations inside a JSON file and then review it
+                #provider.conversation_review(conversation)
+
             elif choice == "0":
                 print("\033[92mExiting the program. Goodbye!\033[0m")
+                #delete the conversation.json file
+                if os.path.exists("conversation.json"):
+                    os.remove("conversation.json")
                 time.sleep(1.5)
                 os.system('cls')
                 break
