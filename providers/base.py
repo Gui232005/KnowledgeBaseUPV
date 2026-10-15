@@ -2,6 +2,7 @@
 Log:
 - YYYY-MM-DD - [NAME]: Describe the improvement made in this file.
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
+- 2026-10-15 - [AlexPT2k22]: Removed the unused `user` variable in connect_to_supabase (ruff F841).
 """
 
 from abc import ABC, abstractmethod
@@ -39,7 +40,7 @@ class ModelProvider(ABC):
     @staticmethod
     def connect_to_supabase():
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        user: dict = supabase.auth.sign_in_with_password({
+        supabase.auth.sign_in_with_password({
             'email': USERNAME,
             'password': PASSWORD,
         })
