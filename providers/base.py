@@ -4,6 +4,7 @@ Log:
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable.
 - 2026-10-15 - [AlexPT2k22]: Removed the unused `user` variable in connect_to_supabase (ruff F841).
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation and fix some issues.
+- 2026-10-20 - [Guilherme Silva]: Ended the conversation_review method and added the ability to select a conversation file to review.
 """
 
 from abc import ABC, abstractmethod
@@ -39,8 +40,18 @@ class ModelProvider(ABC):
     def speak_with_model(question: str, output_type: str):
         pass
 
-    def create_conversation(self, conversation_data):
-        file = "conversation.json"
+    @staticmethod
+    def load_title():
+        try:
+            with open("memory.txt", "r", encoding="utf-8") as f:
+                title = f.read().strip()
+                print(f"\033[92mLoaded title from memory.txt: {title}\033[0m")
+                return title
+        except FileNotFoundError:
+            return None
+    
+    def create_conversation(self, conversation_data, title):
+        file = f"conversations/{title}"
         try:
             with open(file, "r", encoding="utf-8") as f:
                 history = json.load(f)
@@ -50,10 +61,8 @@ class ModelProvider(ABC):
         with open(file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=4)
 
-    @staticmethod
+    @abstractmethod
     def conversation_review(conversation):
-        '''conversation is a JSON object'''
-        print(f"Conversation Review: {conversation}")
         pass
 
     @staticmethod

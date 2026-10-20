@@ -40,10 +40,10 @@
  - [ ] Adicionar controlos de pausa, reprodução, velocidade e volume da voz
  - [ ] Permitir escolher diferentes vozes, idiomas e sotaques
  - [ X ] Permitir alternar rapidamente entre texto, voz e modo misto durante uma sessão
- - [ ] Criar um modo de prática oral com perguntas, respostas e feedback imediato
- - [ ] Permitir ativar ou desativar o microfone e apagar gravações e transcrições
- - [ ] Criar um modo de revisão rápida que resume a conversa em cartões ou pontos-chave
- - [ ] Permitir partilhar uma conversa, transcrição ou resumo
+ - [ X ] Criar um modo de revisão rápida que resume a conversa em cartões ou pontos-chave (development ...) 
+ - [ X ] Permitir armazenar qualquer conversa
+ - [ X ] Permitir que de qualquer conversa armazenada possa continuar a conversa sempre que quiser
+ - [ ] Permir que mesmo fazendo load de conversa ou começando uma nova, até fechar o programa a conversa seja semelhante aos LLMs, e não um load a cada interação
  - [ ] Permitir que caso queira apenas adicionar um novo modelo apenas crie um ficheiro .py com o nome do novo modelo - tem de adaptar as funcoes em mistral.py para o modelo 
  - [ ] Mehorar aquilo que é a fala, ela funciona, mas pode ser bastante melhorada
  - [ ] Melhorar a apresentação das formulas matemáticas pois as mesmas neste momemento estão mal formatadas o que não permite uma boa visualização das mesmas

@@ -4,6 +4,7 @@ Log:
 - 2026-10-12 - [Guilherme Silva]: Added the ability to create videos and to play them.
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable (NOT FINISHED).
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation.
+- 2026-10-20 - [Guilherme Silva]: Added the conversation_review
 """
 
 import base64
@@ -27,10 +28,20 @@ class Mistral(ModelProvider):
         super().__init__("Mistral", api_key)
         self.client = MistralClient(api_key=api_key)
 
-    def speak_with_model(self, question: str, output_type: str):
+    def conversation_review(self, conversation):
+        print("\033[92mReviewing the conversation...\033[0m")
+        prompt = '''You're going to receive a JSON file with a conversation history stored there and you will review the conversation and give me a summary of that, with the 
+            most important points, advices and conclusions about the all conversation'''
+        answer = self.model_output(prompt, json.dumps(conversation), "Please review the conversation and give me a summary of that conversation.")
+        time.sleep(1)  # Adding a small delay to ensure the output is printed after the prompt
+        os.system('cls')
+        print(f"\033[92mConversation Review:\033[0m \n{answer}")
+
+    def speak_with_model(self, question: str, output_type: str, conversation: list):
         return self.speak_with_model_about_notes(
             question,
             output_type,
+            conversation,
         )
 
     def process_all_pdfs_in_folders(self):
@@ -221,21 +232,22 @@ class Mistral(ModelProvider):
         
         print(f"\033[92mJSON index created for {file_path}:\033[0m\n{new_index}")
 
-    def model_output(self, prompt, returned_files, question):
+    def model_output(self, prompt, returned_files, question, conversation = None):
         mistral_response = self.client.chat.complete(model="mistral-large-latest", messages=[
             {
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
                     {"type": "text", "text": returned_files},
-                    {"type": "text", "text": question}
+                    {"type": "text", "text": question},
+                    {"type": "text", "text": json.dumps(conversation)}
                 ]
             }
         ])
         return mistral_response.choices[0].message.content
 
     # Here you will use your MISTRAL KEY to make questions to the model about your knowledge
-    def speak_with_model_about_notes(self, question, option):
+    def speak_with_model_about_notes(self, question, option, conversation):
         topic_doc = "document_index.json"
         path = pathlib.Path(topic_doc)
 
@@ -246,15 +258,26 @@ class Mistral(ModelProvider):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
             returned_files = []
-            see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
-            you can use how many file you need to answer the question, you only return the files that you will use, 
-            and you will not return any other file, and you will return the files in a JSON format, like this:
-            {
-                "files_used": [
-                    "file1.md",
-                    "file2.md"
-                ]
-            }'''
+            if conversation is None:
+                see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
+                you can use how many file you need to answer the question, you only return the files that you will use, 
+                and you will not return any other file, and you will return the files in a JSON format, like this:
+                {
+                    "files_used": [
+                        "file1.md",
+                        "file2.md"
+                    ]
+                }'''
+            else:
+                see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
+                you can use how many file you need to answer the question, and you will use the information from previous conversations to see if the answer was already given, you only return the files that you will use, 
+                and you will not return any other file, and you will return the files in a JSON format, like this:
+                {
+                    "files_used": [
+                        "file1.md",
+                        "file2.md"
+                    ]
+                }'''
 
             # Here you will use the model to find the files to answer the question, and you will return the files in a JSON format
             while True:
@@ -263,6 +286,7 @@ class Mistral(ModelProvider):
                         see_file_to_read,
                         json.dumps(data),
                         question,
+                        conversation
                     ).strip()
                     if not selection_text:
                         raise ValueError("Model returned empty content (check API key / model name).")
@@ -282,6 +306,21 @@ class Mistral(ModelProvider):
                 print(f"\033[91mI only speak about the contents I know.\033[0m")
                 exit(1)
             else:
+                if conversation is None:
+                    title_prompt= """ Generate a short title for this conversation.
+                        Rules:
+                        - Return only the title.
+                        - Do not provide multiple suggestions.
+                        - Do not include numbering, quotation marks, Markdown, explanations, or emojis.
+                        - Use between 3 and 8 words.
+                        - Use only letters, numbers, spaces, and hyphens.
+                        - Do not include line breaks.
+                        - The title must be suitable for use as a Windows or any other operating system filename.
+                        - Do not include a file extension such as .json. """ 
+                    title = self.model_output(title_prompt, json.dumps(returned_files), question, conversation)
+                    title = title + ".json"
+                else:
+                    title = self.load_title()
                 while True:
                     try: 
                         if option == "audio":
@@ -289,10 +328,10 @@ class Mistral(ModelProvider):
                                 of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a most complete way possible, with all the details,
                                 so your colleagues can benefit from your answer, that answer should be based only on the notes you have taken, and not on your own knowledge.
                                 You only use the file is attached to the question, and you will answer the question based on the notes in that file, and you will not use any other knowledge you have, 
-                                only the notes in the file.
+                                only the notes in the file and if applicable, the information from previous conversations.
                             '''
-                            mistral_response = self.model_output(prompt, json.dumps(returned_files), question)
-                            self.create_conversation({"question": question, "answer": mistral_response})
+                            mistral_response = self.model_output(prompt, json.dumps(returned_files), question, conversation)
+                            self.create_conversation({"question": question, "answer": mistral_response}, title = title)
                             print(f"\033[92mAnswer:\033[0m {mistral_response}")
 
                             try:
@@ -314,10 +353,10 @@ class Mistral(ModelProvider):
                                 of the question, after that you will answer questions about the notes you have taken, and you will return the answer in a most complete way possible, with all the details,
                                 so your colleagues can benefit from your answer, that answer should be based only on the notes you have taken, and not on your own knowledge.
                                 You only use the file is attached to the question, and you will answer the question based on the notes in that file, and you will not use any other knowledge you have, 
-                                only the notes in the file.
+                                only the notes in the file and the information from previous conversations if applicable.
                             '''
-                            answer = self.model_output(prompt, json.dumps(returned_files), question)
-                            self.create_conversation(conversation_data={"question": question, "answer": json.dumps(answer)})
+                            answer = self.model_output(prompt, json.dumps(returned_files), question, conversation)
+                            self.create_conversation(conversation_data={"question": question, "answer": json.dumps(answer)}, title = title)
                             os.system('cls')
                             print(f"\033[92mAnswer:\033[0m {answer}")
                             input("\033[93mPress Enter to continue...\033[0m")
@@ -326,9 +365,9 @@ class Mistral(ModelProvider):
 
                         elif option == "summary":
                             prompt = f'''You are a very good person to do summaries, and you will receive a text, and you will need to create a very good summary of that text, 
-                                with the most important points of the text, and you will return the summary'''
-                            answer = self.model_output(prompt, json.dumps(returned_files), question)
-                            self.create_conversation(conversation_data={"question": question, "answer": answer})
+                                with the most important points of the text, and you will return the summary based on the text and the information from previous conversations if applicable.'''
+                            answer = self.model_output(prompt, json.dumps(returned_files), question, conversation)
+                            self.create_conversation(conversation_data={"question": question, "answer": answer}, title = title)
                             os.system('cls')
                             print(f"Summary: {answer}")
                             input("\033[93mPress Enter to continue...\033[0m")
@@ -357,10 +396,12 @@ class Mistral(ModelProvider):
                                             "Option D"
                                         ]
                                     }}
-                                ] I only want the JSON, nothing else, and you will not answer any questions, only create the quiz.'''
-                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question))
-                            answer = "[" + response + "]"                       
-                            self.create_conversation(conversation_data={"question": question, "answer": response})                            
+                                ] I only want the JSON, nothing else, and you will not answer any questions, only create the quiz.
+                                    NOTE: Use the information from previous conversations if applicable that will improve your quality
+                                '''
+                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question, conversation))
+                            answer = "[" + response + "]"                 
+                            self.create_conversation(conversation_data={"question": question, "answer": response}, title = title)                            
                             os.system('cls')
                             try:
                                 json_quiz = json.loads(answer)
@@ -419,9 +460,12 @@ class Mistral(ModelProvider):
                                         "question": "Question 2",
                                         "answer": "Answer 2"
                                     }}
-                                ] I only want the JSON, nothing else, and you will not answer any questions, only create the flashcards. And 10 flashcards is the maximum you can create, if the content is too big, you will create only 10 flashcards, and you will not create more than 10 flashcards.'''
-                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question))
-                            self.create_conversation(conversation_data={"question": question, "answer": response})
+                                ] I only want the JSON, nothing else, and you will not answer any questions, only create the flashcards. And 10 flashcards is the maximum you can create, if the content is too big, 
+                                you will create only 10 flashcards, and you will not create more than 10 flashcards.
+                                NOTE: Use the information from previous conversations if applicable that will improve your quality
+                                '''
+                            response = ModelProvider.extract_json_object(self.model_output(prompt, json.dumps(returned_files), question, conversation))
+                            self.create_conversation(conversation_data={"question": question, "answer": response}, title = title)
                             answer = "[" + response + "]"
                             os.system('cls')
                             try:
@@ -475,8 +519,10 @@ class Mistral(ModelProvider):
                                 - Prefer arranging text with VGroup(...).arrange(DOWN, buff=...) and
                                 then call group.scale_to_fit_width(config.frame_width - 1)
                                 and group.scale_to_fit_height(config.frame_height - 1) when needed.
+
+                                NOTE: If applicable to the question use previous conversations to improve the quality of the video, if applicable to the case
                             """
-                            answer = self.model_output(prompt, json.dumps(returned_files), question)
+                            answer = self.model_output(prompt, json.dumps(returned_files), question, conversation)
                             self.create_conversation(conversation_data={"question": question, "answer": "A video was created successfully."})
                             ModelProvider.run_video(answer, quality="l", preview=True)
                             input("\033[92mPress Enter to continue...\033[0m")
