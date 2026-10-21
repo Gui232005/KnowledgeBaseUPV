@@ -6,6 +6,7 @@ Log:
 - 2026-10-15 - [AlexPT2k22]: Turned the loose string after the log into a comment so the imports stay at the top of the module (ruff E402).
 - 2026-10-16 - [Guilherme Silva]: Fix provider and add the option Conversation Review to the CLI interface.
 - 2026-10-20 - [Guilherme Silva]: Added the ability to select a conversation file to review.
+- 2026-10-21 - [Guilherme Silva]: Add conversation restoration, active-chat continuation, conversation review selection, and a New Chat menu option.
 """
 
 # Impedir que quem nao respeite as regras faça commits and pushs
@@ -25,12 +26,11 @@ OPTIONS = {
     "5": ("Flashcards"),
     "6": ("Video"),
     "7": ("Conversation Review"),
+    "8": ("New Chat"),
     "0": ("Exit")
 }
 
-def main():
-    provider = Mistral(os.getenv("PROVIDER_KEY"))
-
+def load_conversation():
     while True:
         see = input("\033[92mDo you want to restore a previous conversation? (y/n): \033[0m")
         if see.lower() == "y":
@@ -63,6 +63,7 @@ def main():
             else:
                 print("\033[91mNo conversation files found. Please create a conversation first.\033[0m")
                 conversation = None
+                return
             print(f"\033[92mConversation file {path} loaded successfully.\033[0m")
             time.sleep(3)
             break
@@ -71,7 +72,20 @@ def main():
             break
         else:
             print("\033[91mInvalid choice. Please try again.\033[0m")
+            return conversation
     os.system('cls')
+    return conversation
+
+def continue_conversation():
+    with open("memory.txt", "r", encoding="utf-8") as f:
+        conversation = f.read().strip()
+        if conversation:
+            return conversation
+
+def main():
+    provider = Mistral(os.getenv("PROVIDER_KEY"))
+
+    conversation = load_conversation()
 
     while True:
             # Menu to choose output type
@@ -85,14 +99,18 @@ def main():
 
             if choice == "1":
                 os.system('cls')
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 question = input("\033[92mEnter your question about the notes: \033[0m")
                 provider.speak_with_model(question, "text", conversation)
                 
             elif choice == "2":
-                # Here you will use the speech text recognition
+                # Here you will use the speech text recognition<
                 r = sr.Recognizer()
                 r.pause_threshold = 1
                 r.dynamic_energy_threshold = True
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 while True:
                     try:
                         with sr.Microphone() as source:
@@ -117,32 +135,46 @@ def main():
             
             elif choice == "3":
                 os.system('cls')
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "summary", conversation)
 
             elif choice == "4":
                 os.system('cls')
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 question = input("Enter your theme to create a quiz about: ")
                 provider.speak_with_model(question, "quizz", conversation)
 
             elif choice == "5":
                 os.system('cls')
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "flashcards", conversation)
 
             elif choice == "6":
                 os.system('cls')
+                if os.path.exists("memory.txt") and conversation is None:
+                    conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "video", conversation)
 
             elif choice == "7":
                 os.system('cls')
                 if conversation is None:
-                    print("\033[91mNo conversation file found. Please create a conversation first.\033[0m")
-                    continue
+                    dir_list = os.listdir("conversations")
+                    for file in dir_list:
+                        if os.path.exists(os.path.join("conversations", file)):
+                            provider.conversation_review(file)
                 else:
                     provider.conversation_review(conversation)
-
+            elif choice == "8":
+                os.system('cls')
+                conversation = None
+                os.remove("memory.txt")
+                
             elif choice == "0":
                 print("\033[92mExiting the program. Goodbye!\033[0m")
                 #delete the conversation.json file
@@ -150,6 +182,10 @@ def main():
                     os.remove("conversation.json")
                 time.sleep(1.5)
                 os.system('cls')
+                if os.path.exists("memory.txt"):
+                    os.remove("memory.txt")
+                else:
+                    pass
                 break
 
 

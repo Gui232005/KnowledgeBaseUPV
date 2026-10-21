@@ -5,6 +5,7 @@ Log:
 - 2026-10-15 - [Guilherme Silva]: Improve the architecture of the project, creating a base class for the providers and making the code more modular and maintainable (NOT FINISHED).
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation.
 - 2026-10-20 - [Guilherme Silva]: Added the conversation_review
+- 2026-10-21 - [Guilherme Silva]: Load conversation files before review and reuse their JSON content when continuing a conversation.
 """
 
 import base64
@@ -30,9 +31,21 @@ class Mistral(ModelProvider):
 
     def conversation_review(self, conversation):
         print("\033[92mReviewing the conversation...\033[0m")
+        if isinstance(conversation, (str, os.PathLike)):
+            conversation_path = pathlib.Path(conversation)
+            if not conversation_path.exists():
+                conversation_path = pathlib.Path("conversations") / conversation_path
+            with conversation_path.open("r", encoding="utf-8") as file:
+                conversation = json.load(file)
+
         prompt = '''You're going to receive a JSON file with a conversation history stored there and you will review the conversation and give me a summary of that, with the 
-            most important points, advices and conclusions about the all conversation'''
-        answer = self.model_output(prompt, json.dumps(conversation), "Please review the conversation and give me a summary of that conversation.")
+            most important points, advices and conclusions about the whole conversation.
+            The JSON content is included in the next message; review its content, not a filename.'''
+        answer = self.model_output(
+            prompt,
+            json.dumps(conversation, ensure_ascii=False, indent=2),
+            "Please review the conversation and give me a summary of that conversation.",
+        )
         time.sleep(1)  # Adding a small delay to ensure the output is printed after the prompt
         os.system('cls')
         print(f"\033[92mConversation Review:\033[0m \n{answer}")
@@ -250,6 +263,13 @@ class Mistral(ModelProvider):
     def speak_with_model_about_notes(self, question, option, conversation):
         topic_doc = "document_index.json"
         path = pathlib.Path(topic_doc)
+
+        if isinstance(conversation, (str, os.PathLike)):
+            conversation_path = pathlib.Path(conversation)
+            if not conversation_path.exists():
+                conversation_path = pathlib.Path("conversations") / conversation_path
+            with conversation_path.open("r", encoding="utf-8") as file:
+                conversation = json.load(file)
 
         if not os.path.exists(path):
             print(f"\033[91mThe file {topic_doc} does not exist, skipping.\033[0m")

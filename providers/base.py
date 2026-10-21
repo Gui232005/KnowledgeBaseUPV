@@ -5,6 +5,7 @@ Log:
 - 2026-10-15 - [AlexPT2k22]: Removed the unused `user` variable in connect_to_supabase (ruff F841).
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation and fix some issues.
 - 2026-10-20 - [Guilherme Silva]: Ended the conversation_review method and added the ability to select a conversation file to review.
+- 2026-10-21 - [Guilherme Silva]: Save the active conversation title in memory.txt so it can be restored across sessions.
 """
 
 from abc import ABC, abstractmethod
@@ -58,6 +59,8 @@ class ModelProvider(ABC):
         except (FileNotFoundError, json.JSONDecodeError):
             history = []
         history.append(conversation_data)
+        with open("memory.txt", "w", encoding="utf-8") as f:
+                            f.write(f"{title}")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=4)
 
