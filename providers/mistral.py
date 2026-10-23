@@ -6,6 +6,7 @@ Log:
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation.
 - 2026-10-20 - [Guilherme Silva]: Added the conversation_review
 - 2026-10-21 - [Guilherme Silva]: Load conversation files before review and reuse their JSON content when continuing a conversation.
+- 2026-10-23 - [Guilherme Silva]: Complete the file change log header.
 """
 
 import base64
@@ -250,10 +251,16 @@ class Mistral(ModelProvider):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "text", "text": returned_files},
-                    {"type": "text", "text": question},
-                    {"type": "text", "text": json.dumps(conversation)}
+                    {"type": "text", "text": f"Instructions:\n{prompt}"},
+                    {"type": "text", "text": f"Available document index:\n{returned_files}"},
+                    {"type": "text", "text": f"Current user request:\n{question}"},
+                    {
+                        "type": "text",
+                        "text": (
+                            "Previous conversation JSON:\n"
+                            f"{json.dumps(conversation, ensure_ascii=False)}"
+                        ),
+                    },
                 ]
             }
         ])
@@ -281,23 +288,27 @@ class Mistral(ModelProvider):
             if conversation is None:
                 see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
                 you can use how many file you need to answer the question, you only return the files that you will use, 
-                and you will not return any other file, and you will return the files in a JSON format, like this:
+                and you will not return any other file. The values in the "file" fields are the only valid file names.
+                Return those exact values, without adding ".md" or changing their spelling, in this JSON format:
                 {
                     "files_used": [
-                        "file1.md",
-                        "file2.md"
+                        "AC",
+                        "AI_1"
                     ]
                 }'''
             else:
                 see_file_to_read = '''You will receive a JSON, and that json is like a easier way for you to find the files with the content of the question, 
                 you can use how many file you need to answer the question, and you will use the information from previous conversations to see if the answer was already given, you only return the files that you will use, 
-                and you will not return any other file, and you will return the files in a JSON format, like this:
+                and you will not return any other file. The values in the "file" fields are the only valid file names.
+                Return those exact values, without adding ".md" or changing their spelling, in this JSON format:
                 {
                     "files_used": [
-                        "file1.md",
-                        "file2.md"
+                        "AC",
+                        "AI_1"
                     ]
-                }'''
+                }
+                If the request uses vague wording such as "these topics", infer the topics from the previous conversation and select the matching files from the index.
+                If the previous conversation does not identify a topic, return an empty "files_used" array.'''
 
             # Here you will use the model to find the files to answer the question, and you will return the files in a JSON format
             while True:
@@ -428,7 +439,7 @@ class Mistral(ModelProvider):
                                 if isinstance(json_quiz, list):
                                     for i, q in enumerate(json_quiz):
                                         print(f"\033[92mQuestion {i + 1}:\033[0m {q.get('question')}")
-                                        for j, opt in enumerate(q.get('opt', [])):
+                                        for j, opt in enumerate(q.get('options', [])):
                                             print(f"  Option {chr(65 + j)}: {opt}") # 65 is the ASCII code for 'A'
                                         while True:
                                             my_answer = input("\033[92mEnter your answer (A, B, C, D): \033[0m").strip().upper()
@@ -516,6 +527,17 @@ class Mistral(ModelProvider):
                                 Crucial requirements:
                                 - Respond ONLY with raw Python code (no explanations and no Markdown fences).
                                 - Match the language of the prompt for on-screen text.
+                                - Create a fluid educational video, not a sequence of static slides.
+                                - Use a clear visual rhythm: animate the introduction, reveal content progressively,
+                                and use smooth transitions between ideas. Prefer FadeIn, FadeOut, Transform,
+                                ReplacementTransform, FadeTransform, Create, Uncreate, AnimationGroup, or
+                                LaggedStart with run_time and smooth_rate_func where appropriate.
+                                - Avoid abrupt scene changes. Before replacing a section, animate it out or
+                                transform it into the next section. Keep related objects on screen when they
+                                provide context.
+                                - Use short pauses after important concepts and vary animation timing naturally.
+                                Use run_time values generally between 0.4 and 1.5 seconds, unless a longer
+                                explanation genuinely needs more time.
                                 - Use ONLY Text(...) for typography and labels. NEVER use Tex(...),
                                 MathTex(...), or BulletedList(...), because LaTeX is not installed.
                                 - Use only standard colors (WHITE, BLACK, BLUE, RED, GREEN, YELLOW, ORANGE,
@@ -536,15 +558,34 @@ class Mistral(ModelProvider):
                                 lines with '\\n', use short bullet points, and use font_size between
                                 24 and 40 for body text. A list must fit vertically as well as
                                 horizontally; show fewer items per scene when necessary.
-                                - Prefer arranging text with VGroup(...).arrange(DOWN, buff=...) and
-                                then call group.scale_to_fit_width(config.frame_width - 1)
-                                and group.scale_to_fit_height(config.frame_height - 1) when needed.
+                                - Make the layout responsive to the rendered frame rather than assuming
+                                fixed pixel positions. Use config.frame_width and config.frame_height,
+                                frame_center, relative coordinates, and arrange/next_to methods.
+                                Prefer arranging text with VGroup(...).arrange(DOWN, buff=...) and then
+                                call group.scale_to_fit_width(config.frame_width - 1) and
+                                group.scale_to_fit_height(config.frame_height - 1) when needed.
+                                - Keep all important content inside a responsive safe area of
+                                config.frame_width - 2 and config.frame_height - 2. Recalculate group
+                                sizes after adding content, and use scale_to_fit_width or
+                                scale_to_fit_height instead of hard-coded scaling when possible.
+                                - Use a consistent 16:9 composition that remains readable when the video
+                                player is resized or viewed on a smaller screen. Do not rely on tiny text,
+                                edge-aligned objects, or fixed coordinates tied to one screen size.
+                                - Use one coherent color palette and recurring visual elements so transitions
+                                feel connected. Include a brief animated title and a closing summary when
+                                appropriate, but do not add filler content.
 
                                 NOTE: If applicable to the question use previous conversations to improve the quality of the video, if applicable to the case
                             """
                             answer = self.model_output(prompt, json.dumps(returned_files), question, conversation)
-                            self.create_conversation(conversation_data={"question": question, "answer": "A video was created successfully."})
-                            ModelProvider.run_video(answer, quality="l", preview=True)
+                            self.create_conversation(
+                                conversation_data={
+                                    "question": question,
+                                    "answer": "A video was created successfully.",
+                                },
+                                title=title,
+                            )
+                            ModelProvider.run_video(answer, quality="m", preview=True)
                             input("\033[92mPress Enter to continue...\033[0m")
                             break
 

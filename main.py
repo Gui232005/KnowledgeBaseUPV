@@ -7,6 +7,7 @@ Log:
 - 2026-10-16 - [Guilherme Silva]: Fix provider and add the option Conversation Review to the CLI interface.
 - 2026-10-20 - [Guilherme Silva]: Added the ability to select a conversation file to review.
 - 2026-10-21 - [Guilherme Silva]: Add conversation restoration, active-chat continuation, conversation review selection, and a New Chat menu option.
+- 2026-10-23 - [Guilherme Silva]: Complete the file change log header.
 """
 
 # Impedir que quem nao respeite as regras faça commits and pushs
@@ -34,45 +35,55 @@ def load_conversation():
     while True:
         see = input("\033[92mDo you want to restore a previous conversation? (y/n): \033[0m")
         if see.lower() == "y":
-            files_array = []
-            dir_list = os.listdir("conversations")
-            files = len(dir_list)
-            if files > 1:
-                for file in dir_list:
-                    files_array.append(file)
-                    print(f"\033[92m{file}\033[0m")
-                input_file = input("\033[92mEnter the number of the conversation file you want to review: \033[0m")                
-                conversation = files_array[int(input_file) - 1]
-                path = os.path.join("conversations", conversation)
-
-                conversation_file = files_array[int(input_file) - 1]
-                with open("memory.txt", "w", encoding="utf-8") as f:
-                    f.write(f"{conversation_file}")
-
-                with open(path, "r", encoding="utf-8") as f:
-                    conversation = json.load(f)
-            elif files == 1:
-                conversation = dir_list[0]
-                path = os.path.join("conversations", conversation)
-                with open(path, "r", encoding="utf-8") as f:
-                    conversation = json.load(f)
-
-                conversation_file = dir_list[0]
-                with open("memory.txt", "w", encoding="utf-8") as f:
-                    f.write(f"{conversation_file}")
-            else:
+            if not os.path.isdir("conversations"):
                 print("\033[91mNo conversation files found. Please create a conversation first.\033[0m")
-                conversation = None
-                return
+                return None
+
+            files_array = sorted(
+                file
+                for file in os.listdir("conversations")
+                if file.lower().endswith(".json")
+                and os.path.isfile(os.path.join("conversations", file))
+            )
+            if not files_array:
+                print("\033[91mNo conversation files found. Please create a conversation first.\033[0m")
+                return None
+
+            if len(files_array) == 1:
+                conversation_file = files_array[0]
+            else:
+                for index, file in enumerate(files_array, start=1):
+                    print(f"\033[92m{index}. {file}\033[0m")
+                input_file = input("\033[92mEnter the number of the conversation file to restore: \033[0m")
+                try:
+                    file_index = int(input_file) - 1
+                    conversation_file = files_array[file_index]
+                except (ValueError, IndexError):
+                    print("\033[91mInvalid conversation number. Please try again.\033[0m")
+                    continue
+
+            path = os.path.join("conversations", conversation_file)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    conversation = json.load(f)
+            except (OSError, json.JSONDecodeError) as error:
+                print(f"\033[91mCould not load {conversation_file}: {error}\033[0m")
+                return None
+
+            with open("memory.txt", "w", encoding="utf-8") as f:
+                f.write(conversation_file)
+
             print(f"\033[92mConversation file {path} loaded successfully.\033[0m")
             time.sleep(3)
             break
         elif see.lower() == "n":
             conversation = None
+            if os.path.exists("memory.txt"):
+                os.remove("memory.txt")
             break
         else:
             print("\033[91mInvalid choice. Please try again.\033[0m")
-            return conversation
+            continue
     os.system('cls')
     return conversation
 
@@ -99,7 +110,7 @@ def main():
 
             if choice == "1":
                 os.system('cls')
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 question = input("\033[92mEnter your question about the notes: \033[0m")
                 provider.speak_with_model(question, "text", conversation)
@@ -109,7 +120,7 @@ def main():
                 r = sr.Recognizer()
                 r.pause_threshold = 1
                 r.dynamic_energy_threshold = True
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 while True:
                     try:
@@ -121,7 +132,7 @@ def main():
                         texto = r.recognize_google(audio, language="pt-PT")
                         print(f"Foi dito: {texto}")
                         question = texto
-                        provider.speak_with_model(question, "audio")
+                        provider.speak_with_model(question, "audio", conversation)
     
                         if texto.lower() in ["exit", "stop"]:
                             os.system('cls')
@@ -135,28 +146,28 @@ def main():
             
             elif choice == "3":
                 os.system('cls')
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "summary", conversation)
 
             elif choice == "4":
                 os.system('cls')
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 question = input("Enter your theme to create a quiz about: ")
                 provider.speak_with_model(question, "quizz", conversation)
 
             elif choice == "5":
                 os.system('cls')
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "flashcards", conversation)
 
             elif choice == "6":
                 os.system('cls')
-                if os.path.exists("memory.txt") and conversation is None:
+                if conversation is None and os.path.exists("memory.txt"):
                     conversation = continue_conversation()
                 question = input("Enter your question about the notes: ")
                 provider.speak_with_model(question, "video", conversation)
@@ -173,7 +184,8 @@ def main():
             elif choice == "8":
                 os.system('cls')
                 conversation = None
-                os.remove("memory.txt")
+                if os.path.exists("memory.txt"):
+                    os.remove("memory.txt")
                 
             elif choice == "0":
                 print("\033[92mExiting the program. Goodbye!\033[0m")

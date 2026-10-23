@@ -6,6 +6,7 @@ Log:
 - 2026-10-16 - [Guilherme Silva]: Start the ability to store the conversation in a JSON file, and to review the conversation and fix some issues.
 - 2026-10-20 - [Guilherme Silva]: Ended the conversation_review method and added the ability to select a conversation file to review.
 - 2026-10-21 - [Guilherme Silva]: Save the active conversation title in memory.txt so it can be restored across sessions.
+- 2026-10-23 - [Guilherme Silva]: Complete the file change log header.
 """
 
 from abc import ABC, abstractmethod
